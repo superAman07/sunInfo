@@ -88,7 +88,7 @@ export default function Home() {
       />
       <button
         onClick={calculateMain}
-        className="p-2 w-10 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        className="p-2 w-14 bg-blue-500 text-white rounded-md hover:bg-blue-600"
       >
         Go
       </button>
