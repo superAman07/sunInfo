@@ -26,22 +26,17 @@ export default function Home() {
   };
 
   function calculateSunData(lat, lng) {
-    const times = SunCalc.getTimes(new Date(), lat, lng);
-
-    // handle edge case: Polar regions with no sunrise/sunset
+    const times = SunCalc.getTimes(new Date(), lat, lng); 
     if (!times.sunrise || !times.sunset) {
       setResult('The sun does not rise or set at this location on this date.');
       return;
     }
-
-    // Ensure angle is valid
     const userAngle = parseFloat(angle);
     if (isNaN(userAngle) || userAngle < -90 || userAngle > 90) {
       setResult('Please enter a valid angle between -90° and 90°.');
       return;
     }
-
-    // Special case: Negative angles (below horizon)
+ 
     if (userAngle < 0) {
       const belowHorizonTime = userAngle === -15
         ? `Civil Twilight starts: ${times.dawn.toLocaleTimeString()}`
@@ -49,8 +44,6 @@ export default function Home() {
       setResult(belowHorizonTime);
       return;
     }
-
-    // Find the time when the sun reaches the specified altitude (angle)
     let targetTime = null;
     const date = new Date();
     for (let i = 0; i <= 1440; i += 5) {  
@@ -64,13 +57,11 @@ export default function Home() {
       }
     }
 
-    // Handle edge case: No match found for angle
+    // edge cases 
     if (!targetTime) {
       setResult(`The sun does not reach an altitude of ${userAngle}° at this location on this date.`);
       return;
     }
-
-    // Display results
     const sunrise = times.sunrise.toLocaleTimeString();
     const sunset = times.sunset.toLocaleTimeString();
     const altitudeNow = (SunCalc.getPosition(new Date(), lat, lng).altitude * 180) / Math.PI;
@@ -97,7 +88,7 @@ export default function Home() {
       />
       <button
         onClick={calculateMain}
-        className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        className="p-2 w-14 bg-blue-500 text-white rounded-md hover:bg-blue-600"
       >
         Go
       </button>
