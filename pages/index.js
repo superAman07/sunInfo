@@ -31,19 +31,93 @@ export default function Home() {
       setResult('The sun does not rise or set at this location on this date.');
       return;
     }
-    const userAngle = parseFloat(angle);
-    if (isNaN(userAngle) || userAngle < -90 || userAngle > 90) {
-      setResult('Please enter a valid angle between -90° and 90°.');
+
+    const userAngle = angle.trim().toLowerCase();
+    
+    // Handle "Max Height" (Solar Noon)
+    if (userAngle === "max height") {
+      const maxHeightTime = new Date(times.solarNoon);
+      setResult(`Max Height (Solar Noon) at: ${maxHeightTime.toLocaleTimeString()}`);
       return;
     }
- 
-    if (userAngle < 0) {
-      const belowHorizonTime = userAngle === -15
-        ? `Civil Twilight starts: ${times.dawn.toLocaleTimeString()}`
-        : 'Negative angle is not supported for precise calculation.';
-      setResult(belowHorizonTime);
+
+    const parsedAngle = parseFloat(angle);
+    if (isNaN(parsedAngle) || parsedAngle < -90 || parsedAngle > 90) {
+      setResult('Please enter a valid angle between -90° and 90° or "Max Height".');
       return;
     }
+
+    // Handle -15° (Morning civil twilight)
+    if (parsedAngle === -15) {
+      const dawnTime = times.dawn ? times.dawn.toLocaleTimeString() : 'No dawn time available';
+      setResult(`-15° Morning Civil Twilight: ${dawnTime}`);
+      return;
+    }
+
+    // Handle 0° (Sunrise)
+    if (parsedAngle === 0) {
+      setResult(`Sunrise: ${times.sunrise.toLocaleTimeString()}`);
+      return;
+    }
+
+    // Handle 45° (Specific angle case)
+    if (parsedAngle === 45) {
+      let targetTime = null;
+      const date = new Date();
+      for (let i = 0; i <= 1440; i += 5) {  
+        const time = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, i);
+        const position = SunCalc.getPosition(time, lat, lng);
+        const altitude = (position.altitude * 180) / Math.PI;  
+
+        if (Math.abs(altitude - 45) < 0.5) {
+          targetTime = time;
+          break;
+        }
+      }
+      if (targetTime) {
+        setResult(`Time when sun is at 45°: ${targetTime.toLocaleTimeString()}`);
+      } else {
+        setResult('The sun does not reach 45° at this location on this date.');
+      }
+      return;
+    }
+
+    // Handle tan⁻¹(2) which corresponds to ~63.43°
+    if (Math.abs(parsedAngle - Math.atan(2) * (180 / Math.PI)) < 0.5) {
+      let targetTime = null;
+      const date = new Date();
+      for (let i = 0; i <= 1440; i += 5) {  
+        const time = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, i);
+        const position = SunCalc.getPosition(time, lat, lng);
+        const altitude = (position.altitude * 180) / Math.PI;  
+
+        if (Math.abs(altitude - 63.43) < 0.5) {
+          targetTime = time;
+          break;
+        }
+      }
+      if (targetTime) {
+        setResult(`Time when sun is at tan⁻¹(2) (63.43°): ${targetTime.toLocaleTimeString()}`);
+      } else {
+        setResult('The sun does not reach 63.43° at this location on this date.');
+      }
+      return;
+    }
+
+    // Handle 0° (Sunset)
+    if (parsedAngle === 0) {
+      setResult(`Sunset: ${times.sunset.toLocaleTimeString()}`);
+      return;
+    }
+
+    // Handle -15° (Evening civil twilight)
+    if (parsedAngle === -15) {
+      const duskTime = times.dusk ? times.dusk.toLocaleTimeString() : 'No dusk time available';
+      setResult(`-15° Evening Civil Twilight: ${duskTime}`);
+      return;
+    }
+
+    // Handle other angles
     let targetTime = null;
     const date = new Date();
     for (let i = 0; i <= 1440; i += 5) {  
@@ -51,17 +125,17 @@ export default function Home() {
       const position = SunCalc.getPosition(time, lat, lng);
       const altitude = (position.altitude * 180) / Math.PI;  
 
-      if (Math.abs(altitude - userAngle) < 0.5) {  
+      if (Math.abs(altitude - parsedAngle) < 0.5) {
         targetTime = time;
         break;
       }
     }
 
-    // edge cases 
     if (!targetTime) {
-      setResult(`The sun does not reach an altitude of ${userAngle}° at this location on this date.`);
+      setResult(`The sun does not reach an altitude of ${parsedAngle}° at this location on this date.`);
       return;
     }
+
     const sunrise = times.sunrise.toLocaleTimeString();
     const sunset = times.sunset.toLocaleTimeString();
     const altitudeNow = (SunCalc.getPosition(new Date(), lat, lng).altitude * 180) / Math.PI;
@@ -70,7 +144,7 @@ export default function Home() {
       Sunrise: ${sunrise},
       Sunset: ${sunset},
       Current Altitude: ${altitudeNow.toFixed(2)}°,
-      Time at ${userAngle}°: ${targetTime.toLocaleTimeString()}
+      Time at ${parsedAngle}°: ${targetTime.toLocaleTimeString()}
     `);
   }
 
@@ -83,7 +157,7 @@ export default function Home() {
       />
       <input
         onChange={(e) => setAngle(e.target.value)}
-        placeholder="Enter angle (-90° to 90°)"
+        placeholder="Enter angle (-90° to 90°) or 'Max Height'"
         className="bg-transparent w-96 p-2 border border-gray-400 mb-4"
       />
       <button
